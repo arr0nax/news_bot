@@ -1,0 +1,194 @@
+<?php
+function News_menu() {
+  $items = array();
+  $items['generate_words'] = array(
+    'title' => 'Generate Words',
+    'page callback' => 'get_words',
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM
+  );
+  $items['which_website'] = array(
+    'title' => 'Pick A Website',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('site_form'),
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['grab_website'] = array(
+    'title' => 'Grab Website',
+    'page callback' => 'grab_website',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK
+  );
+  return $items;
+}
+
+function get_words() {
+  $titleWordArray = [];
+  $descriptionWordArray = [];
+  $sourceArray = array(
+    'breitbart-news',
+    'buzzfeed',
+    'daily-mail',
+    'mirror',
+    'metro',
+    'mashable'
+  );
+
+  // for ($i=0; $i<1; $i++) {
+  for ($i=0; $i<count($sourceArray); $i++) {
+    $news = curl_init();
+    curl_setopt_array($news, array(
+    CURLOPT_RETURNTRANSFER => 1,
+    CURLOPT_URL => 'https://newsapi.org/v1/articles?source='.$sourceArray[$i].'&sortBy=latest&apiKey=ccd4623de5dd47dd9c48798e310b4e34'
+    ));
+    $articles = curl_exec($news);
+    curl_close($news);
+
+    $recent_news = json_decode($articles);
+    if ($recent_news->status === 'ok') {
+
+      $articleNumber = count($recent_news->articles);
+      for ($j=0;$j<$articleNumber;$j++){
+        $newArticleArray[] = [];
+        $url = $recent_news->articles[$j]->url;
+        $exists = db_query("SELECT * FROM raw_words WHERE url = '{$url}'");
+        $record = $exists->fetchAssoc();
+
+        if(!$record) {
+          foreach ($recent_news->articles[$j] as $key => $val) {
+            if (is_null($val)) {
+              $val = '';
+            }
+            $val = str_replace("'","`",$val);
+            $val = preg_replace('/[^A-Za-z0-9\s]/', '', $val);
+            $val = strtolower($val);
+            if($key === 'title') {
+              $oneWordArray = explode(" ", $val);
+              foreach($oneWordArray as $key => $val){
+                $titleWordArray[] = [$key, $val];
+                $part_of_speech_curl = curl_init();
+                curl_setopt_array($part_of_speech_curl, array(
+                CURLOPT_RETURNTRANSFER => 1,
+                CURLOPT_URL => 'https://api.datamuse.com/words?sp='.$val.'&md=p'
+                ));
+                $part_of_speech = curl_exec($part_of_speech_curl);
+                $part_of_speech = json_decode($part_of_speech);
+                $part_of_speech = $part_of_speech[0]->tags[0];
+                db_query("INSERT INTO raw_words (word,part_of_speech,position,url) VALUES ('{$val}','{$part_of_speech}', '{$key}', '{$url}');");
+
+              }
+
+            }
+          }
+        }
+
+
+
+      }
+    }
+  }
+
+  return "Ready to browse!";
+
+}
+
+
+function site_form() {
+  $form['site'] = array(
+    '#title' => 'Which site would you like to randomize?',
+    '#type' => 'textfield',
+    '#required' => TRUE,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'submit',
+  );
+  return $form;
+}
+
+function site_form_submit($form, &$form_state) {
+  $_SESSION['site'] = $form_state['values']['site'];
+  $form_state['redirect'] = 'grab_website';
+}
+
+
+
+function grab_website() {
+  $site = file_get_contents($_SESSION['site']);
+  $doc = new DOMDocument();
+  $doc->loadHTML($site);
+  // $h1s = $doc->getElementsByTagName('h1');
+  // $h2s = $doc->getElementsByTagName('h2');
+  // $h3s = $doc->getElementsByTagName('h3');
+  $ps = $doc->getElementsByTagName('p');
+  // $lis = $doc->getElementsByTagName('li');
+  // $as = $doc->getElementsByTagName('a');
+  foreach ($h1s as $h1) {
+    $h1->nodeValue = randomPhrase();
+  }
+  foreach ($h2s as $h2) {
+    $h2->nodeValue = randomPhrase();
+  }
+  foreach ($h3s as $h3) {
+    $h3->nodeValue = randomPhrase();
+  }
+  foreach ($ps as $p) {
+      $p->nodeValue = randomPhrase();
+  }
+  foreach ($lis as $li) {
+      $li->nodeValue = randomPhrase();
+  }
+  foreach ($as as $a) {
+      $a->nodeValue = randomPhrase();
+  }
+  return $doc->saveHTML();
+  return 'hello';
+
+}
+
+function randomWord($wordArray) {
+  return $wordArray[array_rand($wordArray)]->word;
+}
+
+function randomPhrase() {
+  $string = getAdjs().' '.getNouns().' '.getVerbs().' a '.getNouns().' '.getNouns();
+  return $string;
+}
+
+function getNouns() {
+  $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'n'");
+  $noun = [];
+  foreach($query as $noun) {
+    $nouns[] = $noun;
+  }
+  return randomWord($nouns);
+}
+
+function getVerbs() {
+  $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'v'");
+  $verb = [];
+  foreach($query as $verb) {
+    $verbs[] = $verb;
+  }
+  return randomWord($verbs);
+}
+
+function getAdjs() {
+  $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'adj'");
+  $adj = [];
+  foreach($query as $adj) {
+    $adjs[] = $adj;
+  }
+  return randomWord($adjs);
+}
+
+function getAdvs() {
+  $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'adv'");
+  $adv = [];
+  foreach($query as $adv) {
+    $advs[] = $adv;
+  }
+  return randomWord($advs);
+}

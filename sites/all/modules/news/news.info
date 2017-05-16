@@ -1,0 +1,5 @@
+name = News
+description = Collects news using newsapi.org.
+package = clayton's modules
+core = 7.x
+files[] = news.module
