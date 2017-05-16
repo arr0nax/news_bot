@@ -14,10 +14,16 @@ function News_menu() {
     'access callback' => TRUE,
     'type' => MENU_NORMAL_ITEM,
   );
-  $items['grab_website/%'] = array(
+  $items['grab_website'] = array(
     'title' => 'Grab Website',
     'page callback' => 'grab_website',
-    'page arguments' => array(1),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK
+  );
+  $items['redirect'] = array(
+    'title' => 'Redirect To a Website',
+    'page callback' => 'redirect',
+    'access argunents' => array('access content'),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK
   );
@@ -108,20 +114,22 @@ function site_form() {
 
 function site_form_submit($form, &$form_state) {
   $_SESSION['site'] = 'http://'.$form_state['values']['site'];
-  $form_state['redirect'] = 'grab_website/'.$form_state['values']['site'];
+  $form_state['redirect'] = 'grab_website';
+  // $form_state['redirect'] = 'grab_website/'.$form_state['values']['site'];
 }
 
 
 
-function grab_website($site) {
+function grab_website() {
+  $site = $_SESSION['site'];
   getNouns();
   getVerbs();
   getAdjs();
   getAdvs();
   getFiller();
   getPhrases();
-  $testArray = ['adj','n','','v','adv','n','n'];
-  $full_site = file_get_contents('http://'.$site);
+  $full_site = file_get_contents($site);
+  // $full_site = file_get_contents('http://'.$site);
   $doc = new DOMDocument();
   $doc->loadHTML($full_site);
   $h1s = $doc->getElementsByTagName('h1');
@@ -131,31 +139,34 @@ function grab_website($site) {
   $lis = $doc->getElementsByTagName('li');
   $as = $doc->getElementsByTagName('a');
   foreach ($h1s as $h1) {
-    $h1->nodeValue = ucwords(randomPhrase());
+    $length = count(explode(' ',$h1->nodeValue));
+    $h1->nodeValue = ucwords(randomPhrase($length));
   }
   foreach ($h2s as $h2) {
-    $h2->nodeValue = ucwords(randomPhrase());
+    $length = count(explode(' ',$h2->nodeValue));
+    $h2->nodeValue = ucwords(randomPhrase($length));
   }
   foreach ($h3s as $h3) {
-    $h3->nodeValue = ucwords(randomPhrase());
+    $length = count(explode(' ',$h3->nodeValue));
+    $h3->nodeValue = ucwords(randomPhrase($length));
   }
   foreach ($ps as $p) {
-      $p->nodeValue = ucfirst(randomPhrase());
+      $length = count(explode(' ',$p->nodeValue));
+      $p->nodeValue = ucfirst(randomPhrase($length));
   }
   foreach ($lis as $li) {
-      $li->nodeValue = ucfirst(randomPhrase());
+      $length = count(explode(' ',$li->nodeValue));
+      $li->nodeValue = ucfirst(randomPhrase($length));
   }
   foreach ($as as $a) {
-      $href = $a->getAttribute('href');
-      $href = str_replace('http://', '', $href);
-      $href = str_replace('https://', '', $href);
-      if ($href[0] == '/') {
-        $href = $site.$href;
-      } else {
-        $href = $href;
-      }
-      $a->setAttribute('href', $href);
-      $a->nodeValue = ucfirst(randomPhrase());
+      // $length = strlen($a->nodeValue);
+      // $href = $a->getAttribute('href');
+      // $href = str_replace('http://', '', $href);
+      // $href = str_replace('https://', '', $href);
+      // $href = str_replace('www.', '', $href);
+      // $href = str_replace($site, '', $href);
+      // $a->setAttribute('href', $href);
+      $a->nodeValue = ucfirst(randomPhrase($length));
   }
   return $doc->saveHTML();
 }
@@ -181,12 +192,18 @@ function randomWord($wordType) {
   }
 }
 
-function randomPhrase() {
+function randomPhrase($length) {
   $phrase = '';
   $phraseArray = randomPhraseArray();
+  if (count($phraseArray)>=$length){
+    for($i=0;$i<$length;$i++){
+      $phrase .= randomWord($phraseArray[$i]) . ' ';
+    }
+  } else {
     for($i=0;$i<count($phraseArray);$i++){
       $phrase .= randomWord($phraseArray[$i]) . ' ';
     }
+  }
   return $phrase;
 }
 
@@ -246,4 +263,9 @@ function getPhrases() {
     $phrases[] = $phrase->phrase_array;
   }
   $_SESSION['phrases'] = $phrases;
+}
+
+function redirect() {
+  $url = $_POST['url'];
+  drupal_json_output($url);
 }

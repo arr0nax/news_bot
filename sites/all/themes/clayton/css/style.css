@@ -5,6 +5,10 @@
 #block-system-navigation .content .menu {
   list-style: none;
   display: inline;
+  position: absolute;
+  text-align: center;
+  z-index: 2147483647 !important;
+  margin-left: 35vw;
 }
 
 .leaf {
@@ -16,4 +20,8 @@
 
 label, input {
   display: inline;
+}
+
+#node-1 h2, #node-1 .links {
+  display: none;
 }
