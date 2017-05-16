@@ -14,9 +14,10 @@ function News_menu() {
     'access callback' => TRUE,
     'type' => MENU_NORMAL_ITEM,
   );
-  $items['grab_website'] = array(
+  $items['grab_website/%'] = array(
     'title' => 'Grab Website',
     'page callback' => 'grab_website',
+    'page arguments' => array(1),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK
   );
@@ -56,6 +57,7 @@ function get_words() {
         $record = $exists->fetchAssoc();
 
         if(!$record) {
+          $phrase_string = '';
           foreach ($recent_news->articles[$j] as $key => $val) {
             if (is_null($val)) {
               $val = '';
@@ -75,16 +77,13 @@ function get_words() {
                 $part_of_speech = curl_exec($part_of_speech_curl);
                 $part_of_speech = json_decode($part_of_speech);
                 $part_of_speech = $part_of_speech[0]->tags[0];
+                $phrase_string .= $part_of_speech . ',';
                 db_query("INSERT INTO raw_words (word,part_of_speech,position,url) VALUES ('{$val}','{$part_of_speech}', '{$key}', '{$url}');");
-
               }
-
             }
           }
+          db_query("INSERT INTO phrase_arrays (phrase_array) VALUES ('{$phrase_string}')");
         }
-
-
-
       }
     }
   }
@@ -96,99 +95,155 @@ function get_words() {
 
 function site_form() {
   $form['site'] = array(
-    '#title' => 'Which site would you like to randomize?',
+    '#title' => 'http://',
     '#type' => 'textfield',
-    '#required' => TRUE,
   );
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => 'submit',
+    '#value' => 'Randomize It',
   );
   return $form;
 }
 
 function site_form_submit($form, &$form_state) {
-  $_SESSION['site'] = $form_state['values']['site'];
-  $form_state['redirect'] = 'grab_website';
+  $_SESSION['site'] = 'http://'.$form_state['values']['site'];
+  $form_state['redirect'] = 'grab_website/'.$form_state['values']['site'];
 }
 
 
 
-function grab_website() {
-  $site = file_get_contents($_SESSION['site']);
+function grab_website($site) {
+  getNouns();
+  getVerbs();
+  getAdjs();
+  getAdvs();
+  getFiller();
+  getPhrases();
+  $testArray = ['adj','n','','v','adv','n','n'];
+  $full_site = file_get_contents('http://'.$site);
   $doc = new DOMDocument();
-  $doc->loadHTML($site);
-  // $h1s = $doc->getElementsByTagName('h1');
-  // $h2s = $doc->getElementsByTagName('h2');
-  // $h3s = $doc->getElementsByTagName('h3');
+  $doc->loadHTML($full_site);
+  $h1s = $doc->getElementsByTagName('h1');
+  $h2s = $doc->getElementsByTagName('h2');
+  $h3s = $doc->getElementsByTagName('h3');
   $ps = $doc->getElementsByTagName('p');
-  // $lis = $doc->getElementsByTagName('li');
-  // $as = $doc->getElementsByTagName('a');
+  $lis = $doc->getElementsByTagName('li');
+  $as = $doc->getElementsByTagName('a');
   foreach ($h1s as $h1) {
-    $h1->nodeValue = randomPhrase();
+    $h1->nodeValue = ucwords(randomPhrase());
   }
   foreach ($h2s as $h2) {
-    $h2->nodeValue = randomPhrase();
+    $h2->nodeValue = ucwords(randomPhrase());
   }
   foreach ($h3s as $h3) {
-    $h3->nodeValue = randomPhrase();
+    $h3->nodeValue = ucwords(randomPhrase());
   }
   foreach ($ps as $p) {
-      $p->nodeValue = randomPhrase();
+      $p->nodeValue = ucfirst(randomPhrase());
   }
   foreach ($lis as $li) {
-      $li->nodeValue = randomPhrase();
+      $li->nodeValue = ucfirst(randomPhrase());
   }
   foreach ($as as $a) {
-      $a->nodeValue = randomPhrase();
+      $href = $a->getAttribute('href');
+      $href = str_replace('http://', '', $href);
+      $href = str_replace('https://', '', $href);
+      if ($href[0] == '/') {
+        $href = $site.$href;
+      } else {
+        $href = $href;
+      }
+      $a->setAttribute('href', $href);
+      $a->nodeValue = ucfirst(randomPhrase());
   }
   return $doc->saveHTML();
-  return 'hello';
-
 }
 
-function randomWord($wordArray) {
-  return $wordArray[array_rand($wordArray)]->word;
+function randomWord($wordType) {
+  if($wordType == 'n'){
+    return $_SESSION['nouns'][array_rand($_SESSION['nouns'])];
+  }
+  if($wordType == 'v'){
+    return $_SESSION['verbs'][array_rand($_SESSION['verbs'])];
+  }
+  if($wordType == 'adv'){
+    return $_SESSION['advs'][array_rand($_SESSION['advs'])];
+  }
+  if($wordType == 'adj'){
+    return $_SESSION['adjs'][array_rand($_SESSION['adjs'])];
+  }
+  if($wordType == ''){
+    return $_SESSION['filler'][array_rand($_SESSION['filler'])];
+  }
+  else {
+    return $_SESSION['filler'][array_rand($_SESSION['filler'])];
+  }
 }
 
 function randomPhrase() {
-  $string = getAdjs().' '.getNouns().' '.getVerbs().' a '.getNouns().' '.getNouns();
-  return $string;
+  $phrase = '';
+  $phraseArray = randomPhraseArray();
+    for($i=0;$i<count($phraseArray);$i++){
+      $phrase .= randomWord($phraseArray[$i]) . ' ';
+    }
+  return $phrase;
+}
+
+function randomPhraseArray() {
+  return explode(',',$_SESSION['phrases'][array_rand($_SESSION['phrases'])]);
 }
 
 function getNouns() {
   $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'n'");
-  $noun = [];
+  $nouns = [];
   foreach($query as $noun) {
-    $nouns[] = $noun;
+    $nouns[] = $noun->word;
   }
-  return randomWord($nouns);
+  $_SESSION['nouns'] = $nouns;
 }
 
 function getVerbs() {
   $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'v'");
-  $verb = [];
+  $verbs = [];
   foreach($query as $verb) {
-    $verbs[] = $verb;
+    $verbs[] = $verb->word;
   }
-  return randomWord($verbs);
+  $_SESSION['verbs'] = $verbs;
 }
 
 function getAdjs() {
   $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'adj'");
-  $adj = [];
+  $adjs = [];
   foreach($query as $adj) {
-    $adjs[] = $adj;
+    $adjs[] = $adj->word;
   }
-  return randomWord($adjs);
+  $_SESSION['adjs'] = $adjs;
 }
 
 function getAdvs() {
   $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'adv'");
-  $adv = [];
+  $advs = [];
   foreach($query as $adv) {
-    $advs[] = $adv;
+    $advs[] = $adv->word;
   }
-  return randomWord($advs);
+  $_SESSION['advs'] = $advs;
+}
+
+function getFiller() {
+  $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = ''");
+  $fillers = [];
+  foreach($query as $filler) {
+    $fillers[] = $filler->word;
+  }
+  $_SESSION['filler'] = $fillers;
+}
+
+function getPhrases() {
+  $query = db_query("SELECT * FROM phrase_arrays");
+  $phrases = [];
+  foreach($query as $phrase) {
+    $phrases[] = $phrase->phrase_array;
+  }
+  $_SESSION['phrases'] = $phrases;
 }

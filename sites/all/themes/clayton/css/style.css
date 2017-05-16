@@ -1,0 +1,19 @@
+#navigation, #name-and-slogan, #block-system-navigation h2  {
+  display: none;
+}
+
+#block-system-navigation .content .menu {
+  list-style: none;
+  display: inline;
+}
+
+.leaf {
+  display: inline;
+  z-index: 2147483647 !important;
+  background-color: rgba(0, 0, 255, 0.5);
+  border: 3px solid black;
+}
+
+label, input {
+  display: inline;
+}
