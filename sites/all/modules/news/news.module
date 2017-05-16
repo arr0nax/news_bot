@@ -34,10 +34,7 @@ function get_words() {
   $titleWordArray = [];
   $descriptionWordArray = [];
   $sourceArray = array(
-    'breitbart-news',
     'buzzfeed',
-    'daily-mail',
-    'mirror',
     'metro',
     'mashable'
   );
@@ -47,7 +44,7 @@ function get_words() {
     $news = curl_init();
     curl_setopt_array($news, array(
     CURLOPT_RETURNTRANSFER => 1,
-    CURLOPT_URL => 'https://newsapi.org/v1/articles?source='.$sourceArray[$i].'&sortBy=latest&apiKey=ccd4623de5dd47dd9c48798e310b4e34'
+    CURLOPT_URL => 'https://newsapi.org/v1/articles?source='.$sourceArray[$i].'&sortBy=top&apiKey=ccd4623de5dd47dd9c48798e310b4e34'
     ));
     $articles = curl_exec($news);
     curl_close($news);
