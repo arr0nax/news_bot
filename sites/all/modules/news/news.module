@@ -34,9 +34,11 @@ function get_words() {
   $titleWordArray = [];
   $descriptionWordArray = [];
   $sourceArray = array(
-    'buzzfeed',
-    'metro',
-    'mashable'
+    'associated-press',
+    'cnn',
+    'google-news',
+    'the-new-york-times',
+    'the-wall-street-journal'
   );
 
   // for ($i=0; $i<1; $i++) {
@@ -166,6 +168,11 @@ function grab_website() {
       $a->nodeValue = ucfirst(randomPhrase($length));
   }
   return $doc->saveHTML();
+  // $list = '<ul>';
+  // foreach ($h2s as $h1) {
+  //   $list .= '<li>'.$h1->nodeValue.'</li>';
+  // }
+  // return $list;
 }
 
 function randomWord($wordType) {
@@ -191,16 +198,27 @@ function randomWord($wordType) {
 
 function randomPhrase($length) {
   $phrase = '';
+  $punct = array('','','','','','','','','','',',',',','');
   $phraseArray = randomPhraseArray();
-  if (count($phraseArray)>=$length){
-    for($i=0;$i<$length;$i++){
-      $phrase .= randomWord($phraseArray[$i]) . ' ';
-    }
-  } else {
-    for($i=0;$i<count($phraseArray);$i++){
-      $phrase .= randomWord($phraseArray[$i]) . ' ';
+  for($i=0;$i<$length;$i++){
+    $wordpos = $i % count($phraseArray);
+    if($i == $length-1) {
+      $phrase .= randomWord('n');
+    } else {
+      $phrase .= randomWord($phraseArray[$wordpos]);
+      if ($wordpos == count($phraseArray)) {
+        $phrase .= '. ';
+      } elseif ($wordpos == 9) {
+        $phrase .= '. ';
+      }
+      elseif ($phraseArray[$wordpos] == 'n') {
+        $phrase .= $punct[array_rand($punct)]. ' ';
+      } else {
+        $phrase .= ' ';
+      }
     }
   }
+
   return $phrase;
 }
 
@@ -262,7 +280,12 @@ function getPhrases() {
   $_SESSION['phrases'] = $phrases;
 }
 
-function redirect() {
-  $url = $_POST['url'];
-  drupal_json_output($url);
-}
+// function redirect() {
+//   $url = $_POST['url'];
+//   if (substr($url,0) != 'h' && substr($url,0) != '/') {
+//     $_SESSION['site'] = $_SESSION['site'] . $url;
+//   } else {
+//     $_SESSION['site'] = $url;
+//   }
+//   drupal_json_output($_SESSION['site']);
+// }
