@@ -27,6 +27,13 @@ function News_menu() {
     'access callback' => TRUE,
     'type' => MENU_CALLBACK
   );
+  $items['save_phrase'] = array(
+    'title' => 'Save a phrase',
+    'page callback' => 'save_phrase',
+    'access argunents' => array('access content'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK
+  );
   return $items;
 }
 
@@ -34,11 +41,11 @@ function get_words() {
   $titleWordArray = [];
   $descriptionWordArray = [];
   $sourceArray = array(
-    'associated-press',
-    'cnn',
-    'google-news',
-    'the-new-york-times',
-    'the-wall-street-journal'
+    'buzzfeed',
+    'mashable',
+    'metro',
+    'mirror',
+    'the-huffington-post'
   );
 
   // for ($i=0; $i<1; $i++) {
@@ -140,22 +147,31 @@ function grab_website() {
   foreach ($h1s as $h1) {
     $length = count(explode(' ',$h1->nodeValue));
     $h1->nodeValue = ucwords(randomPhrase($length));
+    $h1->setAttribute('class','candidate');
   }
   foreach ($h2s as $h2) {
     $length = count(explode(' ',$h2->nodeValue));
     $h2->nodeValue = ucwords(randomPhrase($length));
+    $h2->setAttribute('class','candidate');
+
   }
   foreach ($h3s as $h3) {
     $length = count(explode(' ',$h3->nodeValue));
     $h3->nodeValue = ucwords(randomPhrase($length));
+    $h3->setAttribute('class','candidate');
+
   }
   foreach ($ps as $p) {
       $length = count(explode(' ',$p->nodeValue));
       $p->nodeValue = ucfirst(randomPhrase($length));
+      $p->setAttribute('class','candidate');
+
   }
   foreach ($lis as $li) {
       $length = count(explode(' ',$li->nodeValue));
       $li->nodeValue = ucfirst(randomPhrase($length));
+      $li->setAttribute('class','candidate');
+
   }
   foreach ($as as $a) {
       // $length = strlen($a->nodeValue);
@@ -166,6 +182,8 @@ function grab_website() {
       // $href = str_replace($site, '', $href);
       // $a->setAttribute('href', $href);
       $a->nodeValue = ucfirst(randomPhrase($length));
+      $a->setAttribute('class','candidate');
+
   }
   return $doc->saveHTML();
   // $list = '<ul>';
@@ -289,3 +307,28 @@ function getPhrases() {
 //   }
 //   drupal_json_output($_SESSION['site']);
 // }
+
+function save_phrase() {
+  $phrase = $_POST['phrase'];
+
+  global $user;
+  $node = new stdClass();
+  $node->title = $phrase;
+  $node->type = "snippet";
+  node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+  $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
+  $node->uid = $user->uid;
+  $node->status = 1; //(1 or 0): published or not
+  $node->promote = 0; //(1 or 0): promoted to front page
+  $node->comment = 2; // 0 = comments disabled, 1 = read only, 2 = read/write
+
+  // Term reference (taxonomy) field
+  $node->body['und'][0]['value'] = $phrase;
+
+  $node = node_submit($node); // Prepare node for saving
+  node_save($node);
+
+
+
+  drupal_json_output($phrase);
+}

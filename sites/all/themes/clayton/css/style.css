@@ -1,4 +1,4 @@
-#navigation, #name-and-slogan, #block-system-navigation h2  {
+#navigation, #name-and-slogan, #block-system-navigation h2, .node-teaser h2, .node-teaser .submitted  {
   display: none;
 }
 
@@ -9,6 +9,7 @@
   text-align: center;
   z-index: 2147483647 !important;
   margin-left: 35vw;
+  float: right;
 }
 
 .leaf {
@@ -16,6 +17,7 @@
   z-index: 2147483647 !important;
   background-color: rgba(0, 0, 255, 0.5);
   border: 3px solid black;
+  padding-left: 50px;
 }
 
 label, input {
@@ -24,4 +26,8 @@ label, input {
 
 #node-1 h2, #node-1 .links {
   display: none;
+}
+.candidateButton {
+  margin-right: 5px;
+  display: hidden;
 }
