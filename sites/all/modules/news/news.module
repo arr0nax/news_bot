@@ -171,6 +171,8 @@ function grab_website() {
   $randomness = intval($_SESSION['randomness']['value']);
   $seriousness = intval($_SESSION['seriousness']);
   $twitter_mode = $_SESSION['twitter_mode']['on'];
+  var_dump($twitter_mode);
+  exit;
   $site = $_SESSION['site'];
   getNouns($seriousness);
   getVerbs($seriousness);
@@ -188,7 +190,7 @@ function grab_website() {
   $ps = $doc->getElementsByTagName('p');
   $lis = $doc->getElementsByTagName('li');
   $as = $doc->getElementsByTagName('a');
-  if ($twitter_mode = 'on') {
+  if ($twitter_mode == 'on') {
     foreach ($ps as $p) {
       if (mt_rand(0,99) < $randomness) {
         $length = count(explode(' ',$p->nodeValue));
