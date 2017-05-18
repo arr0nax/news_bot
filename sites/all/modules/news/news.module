@@ -41,11 +41,16 @@ function get_words() {
   $titleWordArray = [];
   $descriptionWordArray = [];
   $sourceArray = array(
-    'buzzfeed',
-    'mashable',
-    'metro',
-    'mirror',
-    'the-huffington-post'
+    // 'buzzfeed',
+    // 'mashable',
+    // 'metro',
+    // 'mirror',
+    // 'the-huffington-post',
+    'associated-press',
+    'cnn',
+    'google-news',
+    'the-new-york-times',
+    'the-wall-street-journal'
   );
 
   // for ($i=0; $i<1; $i++) {
@@ -90,7 +95,9 @@ function get_words() {
                 $part_of_speech = json_decode($part_of_speech);
                 $part_of_speech = $part_of_speech[0]->tags[0];
                 $phrase_string .= $part_of_speech . ',';
-                db_query("INSERT INTO raw_words (word,part_of_speech,position,url) VALUES ('{$val}','{$part_of_speech}', '{$key}', '{$url}');");
+                //////// BUZZFEED SERIOUSNESS = 0
+                //////// NY TIMES SERIOUSNESS = 1
+                db_query("INSERT INTO raw_words (word,part_of_speech,position,url,seriousness) VALUES ('{$val}','{$part_of_speech}', '{$key}', '{$url}','1');");
               }
             }
           }
@@ -123,6 +130,16 @@ function site_form() {
   '#display_inputs' => TRUE,
   );
 
+  $form['seriousness'] = array(
+    '#type' => 'radios',
+    '#title' => t('seriousness'),
+    '#options' => array(
+      t('silly'),
+      t('serious'),
+      t('mix it up'),
+    ),
+  );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => 'Randomize It',
@@ -133,6 +150,7 @@ function site_form() {
 function site_form_submit($form, &$form_state) {
   $_SESSION['site'] = 'http://'.$form_state['values']['site'];
   $_SESSION['randomness'] = $form_state['values']['slider'];
+  $_SESSION['seriousness'] = $form_state['values']['seriousness'];
   $form_state['redirect'] = 'grab_website';
 
   // $form_state['redirect'] = 'grab_website/'.$form_state['values']['site'];
@@ -143,11 +161,12 @@ function site_form_submit($form, &$form_state) {
 function grab_website() {
   $randomness = intval($_SESSION['randomness']['value']);
   $site = $_SESSION['site'];
-  getNouns();
-  getVerbs();
-  getAdjs();
-  getAdvs();
-  getFiller();
+  $seriousness = intval($_SESSION['seriousness']);
+  getNouns($seriousness);
+  getVerbs($seriousness);
+  getAdjs($seriousness);
+  getAdvs($seriousness);
+  getFiller($seriousness);
   getPhrases();
   $full_site = file_get_contents($site);
   // $full_site = file_get_contents('http://'.$site);
@@ -265,8 +284,13 @@ function randomPhraseArray() {
   return explode(',',$_SESSION['phrases'][array_rand($_SESSION['phrases'])]);
 }
 
-function getNouns() {
-  $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'n'");
+function getNouns($seriousness) {
+  $query;
+  if ($seriousness == 2) {
+    $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'n'");
+  } else {
+    $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'n' AND seriousness = '{$seriousness}'");
+  }
   $nouns = [];
   foreach($query as $noun) {
     $nouns[] = $noun->word;
@@ -274,8 +298,13 @@ function getNouns() {
   $_SESSION['nouns'] = $nouns;
 }
 
-function getVerbs() {
-  $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'v'");
+function getVerbs($seriousness) {
+  $query;
+  if ($seriousness == 2) {
+    $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'v'");
+  } else {
+    $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'v' AND seriousness = '{$seriousness}'");
+  }
   $verbs = [];
   foreach($query as $verb) {
     $verbs[] = $verb->word;
@@ -283,8 +312,13 @@ function getVerbs() {
   $_SESSION['verbs'] = $verbs;
 }
 
-function getAdjs() {
-  $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'adj'");
+function getAdjs($seriousness) {
+  $query;
+  if ($seriousness == 2) {
+    $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'adj'");
+  } else {
+    $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'adj' AND seriousness = '{$seriousness}'");
+  }
   $adjs = [];
   foreach($query as $adj) {
     $adjs[] = $adj->word;
@@ -292,8 +326,13 @@ function getAdjs() {
   $_SESSION['adjs'] = $adjs;
 }
 
-function getAdvs() {
-  $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'adv'");
+function getAdvs($seriousness) {
+  $query;
+  if ($seriousness == 2) {
+    $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'adv'");
+  } else {
+    $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = 'adv' AND seriousness = '{$seriousness}'");
+  }
   $advs = [];
   foreach($query as $adv) {
     $advs[] = $adv->word;
@@ -301,8 +340,13 @@ function getAdvs() {
   $_SESSION['advs'] = $advs;
 }
 
-function getFiller() {
-  $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = ''");
+function getFiller($seriousness) {
+  $query;
+  if ($seriousness == 2) {
+    $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = ''");
+  } else {
+    $query = db_query("SELECT * FROM raw_words WHERE part_of_speech = '' AND seriousness = '{$seriousness}'");
+  }
   $fillers = [];
   foreach($query as $filler) {
     $fillers[] = $filler->word;
