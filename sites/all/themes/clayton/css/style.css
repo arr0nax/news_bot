@@ -1,4 +1,4 @@
-#navigation, #name-and-slogan, #block-system-navigation h2, .node-teaser h2, .node-teaser .submitted  {
+#navigation, #name-and-slogan, #block-system-navigation h2, .node-teaser h2, .node-teaser .submitted, .field-label, .submitted, label, #comments h2, #comments h3, #comments a, #edit-comment-body-und-0-format, .links, .links a, #edit-subject, #comment-form label, li.comment-forbidden {
   display: none;
 }
 
@@ -11,6 +11,32 @@
   margin-left: 35vw;
   float: right;
 }
+
+.field-item p {
+  font-size: 50px;
+}
+
+#comments  p {
+  font-size: 25px;
+  margin-left: 60px;
+}
+
+#node-1 p {
+  font-size: inherit;
+}
+
+.views-row a {
+  font-size: 25px;
+  font-style: normal;
+  color: black;
+  text-decoration: none;
+}
+
+.views-row {
+    padding-bottom: 3px;
+    border-bottom: 2px solid black;
+}
+
 
 .leaf {
   display: inline;
@@ -30,4 +56,12 @@ label, input {
 .candidateButton {
   margin-right: 5px;
   display: hidden;
+}
+
+.item-list {
+  margin-top: 40px;
+}
+
+#edit-slider {
+  width: 400px;
 }
