@@ -140,6 +140,14 @@ function site_form() {
     ),
   );
 
+  $form['twitter_mode'] = array(
+  '#title' => t('twitter mode: only replace content of tweets'),
+  '#type' => 'checkboxes',
+  '#options' => array(
+    'on' => t('on')
+  ),
+);
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => 'Randomize It',
@@ -151,6 +159,7 @@ function site_form_submit($form, &$form_state) {
   $_SESSION['site'] = 'http://'.$form_state['values']['site'];
   $_SESSION['randomness'] = $form_state['values']['slider'];
   $_SESSION['seriousness'] = $form_state['values']['seriousness'];
+  $_SESSION['twitter_mode'] = $form_state['values']['twitter_mode'];
   $form_state['redirect'] = 'grab_website';
 
   // $form_state['redirect'] = 'grab_website/'.$form_state['values']['site'];
@@ -160,8 +169,9 @@ function site_form_submit($form, &$form_state) {
 
 function grab_website() {
   $randomness = intval($_SESSION['randomness']['value']);
-  $site = $_SESSION['site'];
   $seriousness = intval($_SESSION['seriousness']);
+  $twitter_mode = $_SESSION['twitter_mode']['on'];
+  $site = $_SESSION['site'];
   getNouns($seriousness);
   getVerbs($seriousness);
   getAdjs($seriousness);
@@ -178,51 +188,61 @@ function grab_website() {
   $ps = $doc->getElementsByTagName('p');
   $lis = $doc->getElementsByTagName('li');
   $as = $doc->getElementsByTagName('a');
-  foreach ($h1s as $h1) {
-    if (mt_rand(0,99) < $randomness) {
-      $length = count(explode(' ',$h1->nodeValue));
-      $h1->nodeValue = ucwords(randomPhrase($length));
-    }$h1->setAttribute('class','candidate');
-  }
-  foreach ($h2s as $h2) {
-    if (mt_rand(0,99) < $randomness) {
-      $length = count(explode(' ',$h2->nodeValue));
-      $h2->nodeValue = ucwords(randomPhrase($length));
-      $h2->setAttribute('class','candidate');
+  if ($twitter_mode = 'on') {
+    foreach ($ps as $p) {
+      if (mt_rand(0,99) < $randomness) {
+        $length = count(explode(' ',$p->nodeValue));
+        $p->nodeValue = ucfirst(randomPhrase($length));
+        $p->setAttribute('class','candidate');
+      }
     }
-  }
-  foreach ($h3s as $h3) {
-    if (mt_rand(0,99) < $randomness) {
-      $length = count(explode(' ',$h3->nodeValue));
-      $h3->nodeValue = ucwords(randomPhrase($length));
-      $h3->setAttribute('class','candidate');
+  } else {
+    foreach ($h1s as $h1) {
+      if (mt_rand(0,99) < $randomness) {
+        $length = count(explode(' ',$h1->nodeValue));
+        $h1->nodeValue = ucwords(randomPhrase($length));
+      }$h1->setAttribute('class','candidate');
     }
-  }
-  foreach ($ps as $p) {
-    if (mt_rand(0,99) < $randomness) {
-      $length = count(explode(' ',$p->nodeValue));
-      $p->nodeValue = ucfirst(randomPhrase($length));
-      $p->setAttribute('class','candidate');
+    foreach ($h2s as $h2) {
+      if (mt_rand(0,99) < $randomness) {
+        $length = count(explode(' ',$h2->nodeValue));
+        $h2->nodeValue = ucwords(randomPhrase($length));
+        $h2->setAttribute('class','candidate');
+      }
     }
-  }
-  foreach ($lis as $li) {
-    if (mt_rand(0,99) < $randomness) {
-      $length = count(explode(' ',$li->nodeValue));
-      $li->nodeValue = ucfirst(randomPhrase($length));
-      $li->setAttribute('class','candidate');
+    foreach ($h3s as $h3) {
+      if (mt_rand(0,99) < $randomness) {
+        $length = count(explode(' ',$h3->nodeValue));
+        $h3->nodeValue = ucwords(randomPhrase($length));
+        $h3->setAttribute('class','candidate');
+      }
     }
-  }
-  foreach ($as as $a) {
-    if (mt_rand(0,99) < $randomness) {
-      // $length = strlen($a->nodeValue);
-      // $href = $a->getAttribute('href');
-      // $href = str_replace('http://', '', $href);
-      // $href = str_replace('https://', '', $href);
-      // $href = str_replace('www.', '', $href);
-      // $href = str_replace($site, '', $href);
-      // $a->setAttribute('href', $href);
-      $a->nodeValue = ucfirst(randomPhrase($length));
-      $a->setAttribute('class','candidate');
+    foreach ($ps as $p) {
+      if (mt_rand(0,99) < $randomness) {
+        $length = count(explode(' ',$p->nodeValue));
+        $p->nodeValue = ucfirst(randomPhrase($length));
+        $p->setAttribute('class','candidate');
+      }
+    }
+    foreach ($lis as $li) {
+      if (mt_rand(0,99) < $randomness) {
+        $length = count(explode(' ',$li->nodeValue));
+        $li->nodeValue = ucfirst(randomPhrase($length));
+        $li->setAttribute('class','candidate');
+      }
+    }
+    foreach ($as as $a) {
+      if (mt_rand(0,99) < $randomness) {
+        // $length = strlen($a->nodeValue);
+        // $href = $a->getAttribute('href');
+        // $href = str_replace('http://', '', $href);
+        // $href = str_replace('https://', '', $href);
+        // $href = str_replace('www.', '', $href);
+        // $href = str_replace($site, '', $href);
+        // $a->setAttribute('href', $href);
+        $a->nodeValue = ucfirst(randomPhrase($length));
+        $a->setAttribute('class','candidate');
+      }
     }
   }
   return $doc->saveHTML();
@@ -256,7 +276,7 @@ function randomWord($wordType) {
 
 function randomPhrase($length) {
   $phrase = '';
-  $punct = array('','','','','','','','','','',',',',','');
+  $punct = array('','','','','','','','','','',',',',',',');
   $phraseArray = randomPhraseArray();
   for($i=0;$i<$length;$i++){
     $wordpos = $i % count($phraseArray);
